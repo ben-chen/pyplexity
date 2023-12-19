@@ -39,7 +39,7 @@ class PerplexityProcessor(ContentProcessor):
         temp_text = None
 
         for text in sentences:
-            #print(text)
+            # print(text)
             if temp_text:
                 text = temp_text + text
                 temp_text = None
@@ -58,7 +58,7 @@ class PerplexityProcessor(ContentProcessor):
         signal.alarm(60 * 5)  # 5mins timeout
         it = nltk.sent_tokenize(content)  # timeout-limited code
         # it = self.split_sentences_by_size(sentences=content.split("."))
-        #print(it)
+        # print(it)
         signal.alarm(0)  # cancel timeout
         for sent in it:
             perpl_score = self.perpl_model.compute_sentence(sent)
@@ -71,39 +71,25 @@ class PerplexityProcessor(ContentProcessor):
 
 
 class PerplexityModel:
+    lower_map = str.maketrans(
+        "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ", "abcdefghijklmnÑopqrstuvwxyz"
+    )
+    accent_map = str.maketrans(
+        "\301\311\315\323\332\307\303\325\302\312\324\300\310",
+        "\341\351\355\363\372\347\343\365\342\352\364\340\350",
+    )
+    punctuation_pattern = re.compile(r"[,;:.()\"<>='`?!¿¡]|(\. [\w]*)|(\.$)|\s+")
+
     def compute_sentence(self, sentence: str) -> float:
-        pass
+        return 0.0
 
     def _custom_tokenize(self, x):
-        x = x.translate(
-            str.maketrans("ABCDEFGHIJKLMNÑOPQRSTUVWXYZ", "abcdefghijklmnÑopqrstuvwxyz")
+        x = x.translate(PerplexityModel.lower_map)
+        x = x.translate(PerplexityModel.accent_map)
+        x = PerplexityModel.punctuation_pattern.sub(
+            lambda match: f" {match.group(0)} ", x
         )
-        x = x.translate(
-            str.maketrans(
-                "\301\311\315\323\332\307\303\325\302\312\324\300\310",
-                "\341\351\355\363\372\347\343\365\342\352\364\340\350",
-            )
-        )
-        x = re.sub(r",", " ,", x)
-        x = re.sub(r";", " ;", x)
-        x = re.sub(r":", " :", x)
-        x = re.sub(r"\. [\w]*", " . ", x)
-        x = re.sub(r"\.$", " .", x)
-        x = re.sub(r"\(", " ( ", x)
-        x = re.sub(r"\)", " ) ", x)
-        x = re.sub(r"\"[ ]*", '" ', x)
-        x = re.sub(r"[ ]*\"", ' "', x)
-        x = re.sub(r"\<", " < ", x)
-        x = re.sub(r"\>", " > ", x)
-        x = re.sub(r"\=", " = ", x)
-        x = re.sub(r"\'", " ' ", x)
-        x = re.sub(r"\`", " ` ", x)
-        x = re.sub(r"\?", " ? ", x)
-        x = re.sub(r"\¿", " ¿ ", x)
-        x = re.sub(r"\!", " ! ", x)
-        x = re.sub(r"\¡", " ¡ ", x)
-        x = re.sub(r"\s+", " ", x).strip()
-        return x.split(" ")
+        return x.strip().split(" ")
 
     @staticmethod
     def from_str(perpl_model: str):
