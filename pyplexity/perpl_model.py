@@ -89,7 +89,7 @@ class PerplexityModel:
         x = PerplexityModel.punctuation_pattern.sub(
             lambda match: f" {match.group(0)} ", x
         )
-        return x.strip().split(" ")
+        return x.split(" ")
 
     @staticmethod
     def from_str(perpl_model: str):
