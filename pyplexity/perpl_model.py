@@ -89,7 +89,7 @@ class PerplexityModel:
         x = PerplexityModel.punctuation_pattern.sub(
             lambda match: f" {match.group(0)} ", x
         )
-        return x.split(" ")
+        return x.strip().split()
 
     @staticmethod
     def from_str(perpl_model: str):
@@ -117,7 +117,6 @@ class BigramPerplexityModel(PerplexityModel):
 
     def compute_sentence(self, sentence: str):
         tok_sentence = self._custom_tokenize(sentence)
-        # tok_sentence = sentence.split()
         bigrams = zip(["#"] + tok_sentence[:-1], tok_sentence)
         log_prob_sum = 0
         for word1, word2 in bigrams:
