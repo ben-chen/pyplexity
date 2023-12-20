@@ -71,25 +71,13 @@ class PerplexityProcessor(ContentProcessor):
 
 
 class PerplexityModel:
-    lower_map = str.maketrans(
-        "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ", "abcdefghijklmnÑopqrstuvwxyz"
-    )
-    accent_map = str.maketrans(
-        "\301\311\315\323\332\307\303\325\302\312\324\300\310",
-        "\341\351\355\363\372\347\343\365\342\352\364\340\350",
-    )
-    punctuation_pattern = re.compile(r"[,;:.()\"<>='`?!¿¡]|(\. [\w]*)|(\.$)|\s+")
+    punctuation_pattern = re.compile(r"([,;:.!?¿¡()<>=\"'`])")
 
     def compute_sentence(self, sentence: str) -> float:
         return 0.0
 
     def _custom_tokenize(self, x):
-        x = x.translate(PerplexityModel.lower_map)
-        x = x.translate(PerplexityModel.accent_map)
-        x = PerplexityModel.punctuation_pattern.sub(
-            lambda match: f" {match.group(0)} ", x
-        )
-        return x.strip().split()
+        return PerplexityModel.punctuation_pattern.sub(r" \1 ", x).lower().split()
 
     @staticmethod
     def from_str(perpl_model: str):
@@ -122,8 +110,8 @@ class BigramPerplexityModel(PerplexityModel):
         for word1, word2 in bigrams:
             bigram = (word1 + " " + word2).encode("UTF-8", errors="replace")
             word1 = word1.encode("UTF-8", errors="replace")
-            bi_dec = self.bigrams[bigram] if bigram in self.bigrams else 0
-            uni_dec = self.unigrams[word1] if word1 in self.unigrams else 0
+            bi_dec = self.bigrams.get(bigram, 0.0)
+            uni_dec = self.unigrams.get(word1, 0.0)
             log_prob_sum += math.log2((bi_dec * 0.8) + (uni_dec * 0.2) + (1 / 1000000))
         perplexity = 2 ** (-(log_prob_sum / len(tok_sentence)))
         return perplexity
@@ -147,9 +135,9 @@ class TrigramPerplexityModel(PerplexityModel):
             )
             bigram = (word1 + " " + word2).encode("UTF-8", errors="replace")
             word1 = word1.encode("UTF-8", errors="replace")
-            tri_dec = self.trigrams[trigram] if trigram in self.trigrams else 0
-            bi_dec = self.bigrams[bigram] if bigram in self.bigrams else 0
-            uni_dec = self.unigrams[word1] if word1 in self.unigrams else 0
+            tri_dec = self.trigrams.get(trigram, 0.0)
+            bi_dec = self.bigrams.get(bigram, 0.0)
+            uni_dec = self.unigrams.get(word1, 0.0)
             log_prob_sum += math.log2(
                 (tri_dec * 0.6) + (bi_dec * 0.3) + (uni_dec * 0.1) + (1 / 1000000)
             )
