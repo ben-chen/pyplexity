@@ -77,7 +77,8 @@ class PerplexityModel:
         return 0.0
 
     def _custom_tokenize(self, x):
-        return PerplexityModel.punctuation_pattern.sub(r" \1 ", x).lower().split()
+        x = PerplexityModel.punctuation_pattern.sub(r" \1 ", x).lower().split()
+        return x if x else ["#"]
 
     @staticmethod
     def from_str(perpl_model: str):
